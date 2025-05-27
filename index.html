@@ -170,6 +170,7 @@
         </form>
       </div>
 
+      <!-- record shown here -->
       <div
         class="bg-white shadow-md p-4 rounded-lg mt-8 mb-8 flex flex-wrap justify-center items-center"
         id="dog-record"
@@ -206,7 +207,8 @@
 
         const html = `
           <div class="record bg-red-200 shadow-md p-4 rounded-lg mt-8 mb-8 flex flex-col justify-center items-center m-2" data-key="${dogRecords.key}"">
-            <div class="w-full flex justify-end">
+            <div class="w-full flex justify-between mb-2">
+              <button class="update-btn text-xs mr-2">📝</button>
               <button class="delete-btn text-xs">✖</button>
             </div>
             <p>${dogRecords.date}</p>
@@ -305,34 +307,34 @@
         updateHealthStatus();
       });
 
-      // 保存
-      $("form").on("submit", function (e) {
-        e.preventDefault();
-        const date = $("#date").val();
-        const dogName = $("#dog-name").val();
-        const walkNum = $("#walkNum").val();
-        const poopNum = $("#poopNum").val();
+      // // 保存
+      // $("form").on("submit", function (e) {
+      //   e.preventDefault();
+      //   const date = $("#date").val();
+      //   const dogName = $("#dog-name").val();
+      //   const walkNum = $("#walkNum").val();
+      //   const poopNum = $("#poopNum").val();
 
-        const key = "dogRecord_" + Date.now();
-        const value = {
-          key: key,
-          date: date,
-          dogName: dogName,
-          walkNum: walkNum,
-          poopNum: poopNum,
-        };
+      //   const key = "dogRecord_" + Date.now();
+      //   const value = {
+      //     key: key,
+      //     date: date,
+      //     dogName: dogName,
+      //     walkNum: walkNum,
+      //     poopNum: poopNum,
+      //   };
 
-        // localStorageに保存
-        localStorage.setItem(key, JSON.stringify(value));
+      //   // localStorageに保存
+      //   localStorage.setItem(key, JSON.stringify(value));
 
-        // 取得したデータをHTMLに表示
-        showDogRecords(value);
-        // 健康状態の更新
-        updateHealthStatus();
+      //   // 取得したデータをHTMLに表示
+      //   showDogRecords(value);
+      //   // 健康状態の更新
+      //   updateHealthStatus();
 
-        // フォームをリセット
-        $("#postForm").addClass("hidden");
-      });
+      //   // フォームをリセット
+      //   $("#postForm").addClass("hidden");
+      // });
 
       // レコード全削除
       $("#deleteAll").on("click", function () {
@@ -343,19 +345,71 @@
         }
       });
 
-      //更新
-      // $("#update").on("click", function () {
-      //   const date = $("#date").val();
-      //   const dogName = $("#dog-name").val();
-      //   const walkNum = $("#walkNum").val();
-      //   const poopNum = $("#poopNum").val();
+      // 編集中のKeyを保持
+      let editingKey = null;
 
-      //   const key =
+      // 更新ボタン
+      $(document).on("click", ".update-btn", function () {
+        // フォームをリセット
+        $("form")[0].reset();
+        $("#postForm").removeClass("hidden");
+        const record = $(this).closest(".record");
+        $("#date").val(record.find("p").eq(0).text());
+        $("#dog-name").val(record.find("p").eq(1).text().replace(/🐕️/g, ""));
+        // 🏃の数を数える
+        const walkText = record.find("p").eq(2).text();
+        $("#walkNum").val(
+          walkText === "🏃なし" ? 0 : (walkText.match(/🏃/g) || []).length
+        );
+        // 💩の数を数える
+        const poopText = record.find("p").eq(3).text();
+        $("#poopNum").val(
+          poopText === "💩なし" ? 0 : (poopText.match(/💩/g) || []).length
+        );
+        editingKey = record.data("key");
+      });
 
-      // });
+      // 保存（新規・更新共通）
+      $("form").on("submit", function (e) {
+        e.preventDefault();
+        const date = $("#date").val();
+        const dogName = $("#dog-name").val();
+        const walkNum = $("#walkNum").val();
+        const poopNum = $("#poopNum").val();
+
+        // 新規 or 更新
+        const key = editingKey || "dogRecord_" + Date.now();
+        const value = {
+          key: key,
+          date: date,
+          dogName: dogName,
+          walkNum: walkNum,
+          poopNum: poopNum,
+        };
+        localStorage.setItem(key, JSON.stringify(value));
+
+        // 再描画
+        $("#dog-record").empty();
+
+        let records = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (!k.startsWith("dogRecord_")) continue;
+          const rec = JSON.parse(localStorage.getItem(k));
+          records.push(rec);
+        }
+        records.sort((a, b) => new Date(a.date) - new Date(b.date));
+        records.forEach(rec => showDogRecords(rec));
+
+        updateHealthStatus();
+        $("#postForm").addClass("hidden");
+        editingKey = null; 
+      });
 
       // post a recordボタン
       $("#postRecord").on("click", function () {
+        // フォームをリセット
+        $("form")[0].reset();
         if ($("#postForm").hasClass("hidden")) {
           $("#postForm").removeClass("hidden");
         } else {
@@ -365,6 +419,8 @@
 
       // postBtn
       $("#postBtn").on("click", function () {
+        // フォームをリセット
+        $("form")[0].reset();
         if ($("#postForm").hasClass("hidden")) {
           $("#postForm").removeClass("hidden");
         }
