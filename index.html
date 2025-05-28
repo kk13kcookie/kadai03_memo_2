@@ -64,7 +64,7 @@
       <div
         class="bg-white shadow-md p-10 rounded-lg mt-8 mb-8 flex flex-col justify-center items-center"
       >
-        <h1 class="text-2xl font-bold mb-6">Status</h1>
+        <h1 class="text-2xl font-bold mb-6"><span id="dogNameTitle"></span>Status</h1>
         <p id="total">Love:</p>
         <p id="physical">Physical</p>
         <p id="mental">Mental:</p>
@@ -288,7 +288,10 @@
           // クリックされたデータ・キーを取得
           const key = $(this).closest(".record").data("key");
           localStorage.removeItem(key);
-          updateHealthStatus(); // 健康状態の更新
+          updateHealthStatus(); 
+
+          let dogNameTitle = getLatestDogName()
+          $("#dogNameTitle").text(dogNameTitle);
         }
       });
 
@@ -305,6 +308,10 @@
 
         // 健康状態の更新
         updateHealthStatus();
+
+        // dogNameTitleの自動表示
+        let dogNameTitle = getLatestDogName()
+        $("#dogNameTitle").text(dogNameTitle);
       });
 
       // // 保存
@@ -342,6 +349,8 @@
           localStorage.clear();
           $("#dog-record").empty();
           updateHealthStatus(); // 健康状態の更新
+          let dogNameTitle = getLatestDogName()
+          $("#dogNameTitle").text(dogNameTitle);
         }
       });
 
@@ -404,6 +413,9 @@
         updateHealthStatus();
         $("#postForm").addClass("hidden");
         editingKey = null; 
+
+        let dogNameTitle = getLatestDogName()
+        $("#dogNameTitle").text(dogNameTitle);
       });
 
       // post a recordボタン
@@ -432,6 +444,25 @@
           $("#postForm").addClass("hidden");
         }
       });
+
+      // dogNameTitle自動表示
+      function getLatestDogName(){
+        let records = [];
+        for (let i=0; i< localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key.startsWith("dogRecord_")){
+            const dogRecord = JSON.parse(localStorage.getItem(key));
+            if (dogRecord && dogRecord.dogName && dogRecord.date) {
+              records.push(dogRecord);
+            }
+          }
+        }
+        if (records.length ===0)return null;
+        records.sort((a,b)=> new Date(b.date) - new Date(a.date));
+        return records[0].dogName;
+      }
+      console.log("最新の愛犬の名前", getLatestDogName());
+
     </script>
   </body>
 </html>
